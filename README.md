@@ -1,24 +1,36 @@
 # Mini-7B AI 🤖
 
-一个可以直接在浏览器运行的 **7B AI 小模型模拟器**。
+一个真正调用模型 API 的网页版 AI 聊天项目。
 
-## 功能
+## 推荐运行方式
 
-- 💬 网页聊天界面
-- 🔄 多轮对话上下文
-- 📱 手机和电脑自适应
-- ⚡ 无需安装依赖
-- 🧠 内置简单问答与规则响应
-- 🧹 一键清空对话
+使用 Node.js 后端，让 API Key 只存在服务器环境变量：
 
-## 重要说明
+```bash
+export OPENAI_API_KEY="你的 API Key"
+export OPENAI_MODEL="gpt-6-luna"
+npm start
+```
 
-这个项目是 **7B AI 行为模拟器**，不是实际的 70 亿参数神经网络模型。为了让普通手机浏览器也能直接运行，它没有加载真正的 7B 权重，而是使用 JavaScript 实现轻量级回答逻辑。
+然后打开服务器地址（默认 http://localhost:3000）。
 
-如果以后要升级成真正的 AI，可以把 `answer()` 换成真实模型接口，或者接入浏览器可运行的轻量模型。
+## 浏览器直连
 
-## 运行
+网页的“API 设置”也支持直接填写 OpenAI-compatible API 地址、模型名和 Key。Key 会保存到浏览器 localStorage。
 
-直接打开 `index.html` 即可。
+**不要把 API Key 提交到 GitHub，也不要在公共电脑上输入自己的 Key。**公开部署推荐使用 server.js 后端代理。
 
-也可以使用 GitHub Pages 部署，部署后就是一个可以访问的网页 AI。
+## 文件
+
+- index.html：聊天界面
+- style.css：界面样式
+- app.js：前端聊天与 API 设置
+- server.js：Node.js API 代理
+- package.json：启动配置
+- .env.example：环境变量示例
+
+## 关于 7B
+
+Mini-7B 是项目名称，并不意味着浏览器真的加载了 70 亿参数权重。现在真正负责回答的是 API 后面的模型。
+
+OpenAI 的新集成应使用 Responses API；官方资料显示旧 Assistants API 已于 2026-08-26 停止服务。
