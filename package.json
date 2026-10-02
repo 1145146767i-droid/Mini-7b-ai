@@ -1,0 +1,1 @@
+{"name":"mini-7b-ai","version":"2.0.0","private":true,"description":"Real-model AI chat app","scripts":{"start":"node server.js"}}
