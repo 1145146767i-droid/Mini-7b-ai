@@ -9,7 +9,7 @@ settings.onclick=openModal;cancel.onclick=()=>modal.classList.add("hidden");
 save.onclick=()=>{localStorage.setItem("mini7b_key",apiKey.value.trim());localStorage.setItem("mini7b_base",baseUrl.value.trim().replace(/\/$/,""));localStorage.setItem("mini7b_model",model.value.trim());modal.classList.add("hidden");refresh();};
 clearBtn.onclick=()=>{history=[];renderWelcome();};
 async function callModel(){
- const c=cfg(); if(!c.key) throw new Error("还没有配置 API Key。");
+ const c=cfg(); if(!c.key){ const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:history})}); const d=await r.json(); if(!r.ok) throw new Error(d.error||"后端请求失败"); return d.content||"模型没有返回文本。"; }
  const res=await fetch(c.base+"/responses",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+c.key},body:JSON.stringify({model:c.model,instructions:"你是 Mini-7B，一个友好、准确、简洁的中文 AI 助手。请根据对话上下文回答用户。不要声称自己真的有 70 亿参数；这里的 Mini-7B 是项目名称。",input:history})});
  const data=await res.json(); if(!res.ok) throw new Error(data.error?.message||"API 请求失败："+res.status);
  return data.output_text||data.output?.flatMap(x=>x.content||[]).map(x=>x.text||"").filter(Boolean).join("\n")||"模型没有返回文本。";
