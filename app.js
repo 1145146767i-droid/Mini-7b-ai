@@ -1,18 +1,96 @@
-const chat=document.querySelector("#chat"),input=document.querySelector("#input"),form=document.querySelector("#form"),clearBtn=document.querySelector("#clear"),settings=document.querySelector("#settings"),modal=document.querySelector("#modal"),save=document.querySelector("#save"),cancel=document.querySelector("#cancel"),apiKey=document.querySelector("#apiKey"),baseUrl=document.querySelector("#baseUrl"),model=document.querySelector("#model"),status=document.querySelector("#status");
+const chat=document.querySelector("#chat");
+const input=document.querySelector("#input");
+const form=document.querySelector("#form");
+const clearBtn=document.querySelector("#clear");
+const modelLabel=document.querySelector("#modelLabel");
+const status=document.querySelector("#status");
+const modelInfo=document.querySelector("#modelInfo");
+
 let history=[];
-const cfg=()=>({key:localStorage.getItem("mini7b_key")||"",base:localStorage.getItem("mini7b_base")||"https://api.openai.com/v1",model:localStorage.getItem("mini7b_model")||"gpt-6-luna"});
-function add(role,text){const row=document.createElement("div");row.className="message "+role;row.innerHTML='<div class="avatar">'+(role==="user"?"🧑":"🤖")+'</div><div class="bubble"></div>';row.querySelector(".bubble").textContent=text;chat.appendChild(row);chat.scrollTop=chat.scrollHeight}
-function renderWelcome(){chat.innerHTML="";add("bot","你好！我是 Mini-7B。现在我可以通过真实模型 API 回答问题了。请先在“API 设置”中配置 Key。");}
-function refresh(){const c=cfg();status.textContent=c.key?"已配置模型："+c.model:"未连接模型 · 请先配置 API";baseUrl.value=c.base;model.value=c.model}
-function openModal(){const c=cfg();baseUrl.value=c.base;model.value=c.model;apiKey.value=c.key;modal.classList.remove("hidden")}
-settings.onclick=openModal;cancel.onclick=()=>modal.classList.add("hidden");
-save.onclick=()=>{localStorage.setItem("mini7b_key",apiKey.value.trim());localStorage.setItem("mini7b_base",baseUrl.value.trim().replace(/\/$/,""));localStorage.setItem("mini7b_model",model.value.trim());modal.classList.add("hidden");refresh();};
-clearBtn.onclick=()=>{history=[];renderWelcome();};
-async function callModel(){
- const c=cfg(); if(!c.key){ const r=await fetch("/api/chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({messages:history})}); const d=await r.json(); if(!r.ok) throw new Error(d.error||"后端请求失败"); return d.content||"模型没有返回文本。"; }
- const res=await fetch(c.base+"/responses",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+c.key},body:JSON.stringify({model:c.model,instructions:"你是 Mini-7B，一个友好、准确、简洁的中文 AI 助手。请根据对话上下文回答用户。不要声称自己真的有 70 亿参数；这里的 Mini-7B 是项目名称。",input:history})});
- const data=await res.json(); if(!res.ok) throw new Error(data.error?.message||"API 请求失败："+res.status);
- return data.output_text||data.output?.flatMap(x=>x.content||[]).map(x=>x.text||"").filter(Boolean).join("\n")||"模型没有返回文本。";
+
+function add(role,text){
+  const row=document.createElement("div");
+  row.className="message "+role;
+  row.innerHTML='<div class="avatar">'+(role==="user"?"🧑":"🤖")+'</div><div class="bubble"></div>';
+  row.querySelector(".bubble").textContent=text;
+  chat.appendChild(row);
+  chat.scrollTop=chat.scrollHeight;
 }
-form.onsubmit=async e=>{e.preventDefault();const q=input.value.trim();if(!q)return;add("user",q);history.push({role:"user",content:q});input.value="";input.disabled=true;const t=document.createElement("div");t.className="message bot";t.innerHTML='<div class="avatar">🤖</div><div class="bubble">正在思考…</div>';chat.appendChild(t);chat.scrollTop=chat.scrollHeight;try{const a=await callModel();t.remove();add("bot",a);history.push({role:"assistant",content:a});}catch(err){t.remove();add("bot","❌ "+err.message+"\n\n如果你是在 GitHub Pages 上直接打开，确认 API 地址支持浏览器跨域；生产环境更推荐使用后端代理，并把 API Key 放到服务器环境变量。");}finally{input.disabled=false;input.focus();}};
-renderWelcome();refresh();
+
+function renderWelcome(){
+  chat.innerHTML="";
+  add("bot","你好！我是 Mini-7B。本版本会在你自己的设备上运行真实的 7B GGUF 模型，不再调用 OpenAI、Claude 等云端 API。");
+}
+
+async function refreshStatus(){
+  try{
+    const r=await fetch("/api/status",{cache:"no-store"});
+    const d=await r.json();
+    const name=d.model?.split(":").at(-1)||"Q4_K_M";
+    modelLabel.textContent=d.phase==="ready"?"本地模型："+name:"本地模型加载中…";
+    modelInfo.textContent=d.phase==="ready"
+      ?"✅ 真本地推理 · 模型已加载"
+      :d.phase==="error"
+        ?"❌ 本地模型加载失败"
+        :"⏳ 正在下载/加载本地模型";
+    status.textContent=d.phase==="ready"
+      ?"模型已就绪："+name
+      :d.phase==="error"
+        ?"模型错误：请查看页面提示或终端日志"
+        :"第一次启动需要下载约 4–5 GB 的 7B Q4_K_M 模型，之后直接使用本地文件。";
+    input.disabled=d.phase!=="ready";
+    if(d.phase!=="ready" && d.phase!=="error"){
+      setTimeout(refreshStatus,2500);
+    }
+  }catch(err){
+    modelLabel.textContent="本地服务器未连接";
+    modelInfo.textContent="请用 npm start 启动，而不是直接打开 HTML";
+    status.textContent="无法连接本地服务器";
+    input.disabled=true;
+  }
+}
+
+clearBtn.onclick=()=>{
+  history=[];
+  renderWelcome();
+};
+
+form.onsubmit=async e=>{
+  e.preventDefault();
+  const q=input.value.trim();
+  if(!q)return;
+
+  add("user",q);
+  history.push({role:"user",content:q});
+  input.value="";
+  input.disabled=true;
+
+  const thinking=document.createElement("div");
+  thinking.className="message bot";
+  thinking.innerHTML='<div class="avatar">🤖</div><div class="bubble">本地模型正在思考…</div>';
+  chat.appendChild(thinking);
+  chat.scrollTop=chat.scrollHeight;
+
+  try{
+    const r=await fetch("/api/chat",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({messages:history})
+    });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||"本地模型请求失败");
+    thinking.remove();
+    add("bot",d.content||"模型没有返回文本。");
+    history.push({role:"assistant",content:d.content||""});
+  }catch(err){
+    thinking.remove();
+    add("bot","❌ "+err.message);
+  }finally{
+    await refreshStatus();
+    input.disabled=false;
+    input.focus();
+  }
+};
+
+renderWelcome();
+refreshStatus();
