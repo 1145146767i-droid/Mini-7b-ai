@@ -1,20 +1,33 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mini-7B AI</title><link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mini-7B AI · 本地 7B</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main class="app">
-<header><div><h1>🤖 Mini-7B AI</h1><p>真实模型 API · 多轮对话</p></div><div class="actions"><button id="settings" class="secondary">⚙️ API 设置</button><button id="clear" class="secondary">清空</button></div></header>
+<header>
+  <div>
+    <h1>🤖 Mini-7B AI</h1>
+    <p id="modelLabel">本地模型加载中…</p>
+  </div>
+  <div class="actions">
+    <span id="modelInfo" class="badge">⏳ 启动中</span>
+    <button id="clear" class="secondary">清空</button>
+  </div>
+</header>
+
 <section id="chat" class="chat" aria-live="polite"></section>
-<form id="form" class="composer"><input id="input" autocomplete="off" placeholder="输入消息，例如：你好，介绍一下你自己"><button type="submit">发送</button></form>
-<footer id="status">未连接模型 · 请先配置 API</footer>
+
+<form id="form" class="composer">
+  <input id="input" autocomplete="off" disabled placeholder="等待本地 7B 模型加载…">
+  <button type="submit">发送</button>
+</form>
+
+<footer id="status">正在连接本地模型服务器…</footer>
 </main>
-<div id="modal" class="modal hidden"><div class="panel"><h2>API 设置</h2><p class="hint">API Key 只应放在你自己的本地/私有环境。不要把 Key 提交到 GitHub。</p>
-<label>API 地址<input id="baseUrl" value="https://api.openai.com/v1"></label>
-<label>模型<input id="model" value="gpt-6-luna"></label>
-<label>API Key<input id="apiKey" type="password" placeholder="sk-..."></label>
-<div class="modal-actions"><button id="cancel" type="button" class="secondary">取消</button><button id="save" type="button">保存</button></div></div></div>
 <script src="app.js"></script>
-</body></html>
+</body>
+</html>
