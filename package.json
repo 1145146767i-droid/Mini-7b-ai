@@ -1,1 +1,14 @@
-{"name":"mini-7b-ai","version":"2.0.0","private":true,"description":"Real-model AI chat app","scripts":{"start":"node server.js"}}
+{
+  "name": "mini-7b-ai",
+  "version": "3.0.0",
+  "private": true,
+  "type": "module",
+  "description": "True local 7B AI chat app powered by Qwen2.5 GGUF and node-llama-cpp",
+  "scripts": {
+    "start": "node server.js",
+    "models:pull": "node-llama-cpp pull --dir ./models hf:Qwen/Qwen2.5-7B-Instruct-GGUF:Q4_K_M"
+  },
+  "dependencies": {
+    "node-llama-cpp": "^3.22.1"
+  }
+}
